@@ -1,31 +1,42 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from firebase_admin import auth as firebase_auth
-from django.conf import settings
 
 from .models import User
 from .serializers import UserSerializer
-from rest_framework.decorators import action
+from .authentication import FirebaseAuthentication
+
 
 class UserViewSet(viewsets.ViewSet):
+    authentication_classes = [FirebaseAuthentication]
 
+    def get_permissions(self):
+        if self.action == 'create':
+            # Solo admins pueden crear usuarios
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]
+    
+    def list(self, request):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+    
     def create(self, request):
+        # Verificar que quien crea es Admin
+        if request.user.role.name != 'Admin':
+            return Response({"error": "No tienes permisos"}, status=403)
+        
         data = request.data
-
         try:
-            # 1. Crear usuario en Firebase
             user = firebase_auth.create_user(
                 email=data['email'],
-                password="Temp1234!"  # contraseña temporal
+                password="Temp1234!"
             )
-
-            # 2. Generar link para reset password
             link = firebase_auth.generate_password_reset_link(data['email'])
-
-            # 👉 aquí deberías enviar email con ese link
             print("RESET LINK:", link)
 
-            # 3. Guardar en Django
             new_user = User.objects.create(
                 firebase_uid=user.uid,
                 name=data['name'],
@@ -37,19 +48,19 @@ class UserViewSet(viewsets.ViewSet):
                 role_id=data['role'],
                 must_change_password=True
             )
-
-            return Response({"message": "User created"}, status=201)
-
+            return Response({"message": "Usuario creado"}, status=201)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
-    
+
     def partial_update(self, request, pk=None):
+        if request.user.role.name != 'Admin':
+            return Response({"error": "No tienes permisos"}, status=403)
+
         try:
             user = User.objects.get(pk=pk)
         except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
+            return Response({"error": "Usuario no encontrado"}, status=404)
 
-        # Si cambia el email, actualizar también en Firebase
         if 'email' in request.data and request.data['email'] != user.email:
             try:
                 firebase_auth.update_user(user.firebase_uid, email=request.data['email'])
@@ -60,25 +71,16 @@ class UserViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=200)
-
         return Response(serializer.errors, status=400)
-        
-    
+
     @action(detail=False, methods=['get'])
     def me(self, request):
-
-        user = request.user
-
-        if not user:
-            return Response({"error": "Unauthorized"}, status=401)
-
-        serializer = UserSerializer(user)
+        # request.user ya es el User de Django real ✅
+        serializer = UserSerializer(request.user)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['get'])
     def students(self, request):
         students = User.objects.filter(role__name='Student')
         serializer = UserSerializer(students, many=True)
         return Response(serializer.data)
-    
-
