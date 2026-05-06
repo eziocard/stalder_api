@@ -26,7 +26,7 @@ class UserViewSet(viewsets.ViewSet):
     def create(self, request):
         # Verificar que quien crea es Admin
         if request.user.role.name != 'Admin':
-            return Response({"error": "No tienes permisos"}, status=403)
+            return Response({"error":"you don't have permissions"}, status=403)
         
         data = request.data
         try:

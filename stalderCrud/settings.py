@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'roles',
     'rest_framework',
     'users',
+    'levels',
 ]
 
 MIDDLEWARE = [
