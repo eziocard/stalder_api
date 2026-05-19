@@ -21,7 +21,7 @@ class LevelViewSet(viewsets.ViewSet):
 
     # POST /api/levels/
     def create(self, request):
-        if request.user.role is None or request.user.role.name != 'Admin':
+        if request.user.role is None or request.user.role.name != 'Administrador':
             return Response({"error": "No tienes permisos"}, status=status.HTTP_403_FORBIDDEN)
         try:
             level = Level.objects.create(
@@ -35,7 +35,7 @@ class LevelViewSet(viewsets.ViewSet):
 
     # DELETE /api/levels/{id}/
     def destroy(self, request, pk=None):
-        if request.user.role is None or request.user.role.name != 'Admin':
+        if request.user.role is None or request.user.role.name != 'Administrador':
             return Response({"error": "No tienes permisos"}, status=status.HTTP_403_FORBIDDEN)
         try:
             Level.objects.get(pk=pk).delete()
@@ -53,7 +53,7 @@ class LevelViewSet(viewsets.ViewSet):
     # POST /api/levels/{id}/add_student/
     @action(detail=True, methods=['post'])
     def add_student(self, request, pk=None):
-        if request.user.role is None or request.user.role.name != 'Admin':
+        if request.user.role is None or request.user.role.name != 'Administrador':
             return Response({"error": "No tienes permisos"}, status=status.HTTP_403_FORBIDDEN)
         try:
             relation, created = StudentLevel.objects.get_or_create(
@@ -66,10 +66,10 @@ class LevelViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    # DELETE /api/levels/{id}/remove_student/
+    
     @action(detail=True, methods=['delete'])
     def remove_student(self, request, pk=None):
-        if request.user.role is None or request.user.role.name != 'Admin':
+        if request.user.role is None or request.user.role.name != 'Administrador':
             return Response({"error": "No tienes permisos"}, status=status.HTTP_403_FORBIDDEN)
         try:
             StudentLevel.objects.get(

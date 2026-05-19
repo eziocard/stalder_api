@@ -25,7 +25,7 @@ class UserViewSet(viewsets.ViewSet):
     
     def create(self, request):
         # Verificar que quien crea es Admin
-        if request.user.role.name != 'Admin':
+        if request.user.role.name != 'Administrador':
             return Response({"error":"you don't have permissions"}, status=403)
         
         data = request.data
@@ -53,7 +53,7 @@ class UserViewSet(viewsets.ViewSet):
             return Response({"error": str(e)}, status=400)
 
     def partial_update(self, request, pk=None):
-        if request.user.role.name != 'Admin':
+        if request.user.role.name != 'Administrador':
             return Response({"error": "No tienes permisos"}, status=403)
 
         try:
