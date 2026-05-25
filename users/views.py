@@ -14,7 +14,6 @@ class UserViewSet(viewsets.ViewSet):
 
     def get_permissions(self):
         if self.action == 'create':
-            # Solo admins pueden crear usuarios
             return [IsAuthenticated()]
         return [IsAuthenticated()]
     
@@ -24,9 +23,8 @@ class UserViewSet(viewsets.ViewSet):
         return Response(serializer.data)
     
     def create(self, request):
-        # Verificar que quien crea es Admin
         if request.user.role.name != 'Administrador':
-            return Response({"error":"you don't have permissions"}, status=403)
+            return Response({"error":"no tienes permisos"}, status=403)
         
         data = request.data
         try:
@@ -75,7 +73,6 @@ class UserViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def me(self, request):
-        # request.user ya es el User de Django real ✅
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
@@ -84,3 +81,17 @@ class UserViewSet(viewsets.ViewSet):
         students = User.objects.filter(role__name='Student')
         serializer = UserSerializer(students, many=True)
         return Response(serializer.data)
+    
+    def destroy(self, request, pk=None):
+        if request.user.role.name != 'Administrador':
+            return Response({"error": "No tienes permisos"}, status=403)
+        try:
+            user = User.objects.get(pk=pk)
+            # Elimina también en Firebase
+            firebase_auth.delete_user(user.firebase_uid)
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except User.DoesNotExist:
+            return Response({"error": "Usuario no encontrado"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
