@@ -128,7 +128,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-cred_path = os.path.join(BASE_DIR, "stalder-60865-firebase-adminsdk-fbsvc-0e77e1b279.json")
+cred_path = os.path.join(BASE_DIR, "stalder-60865-37c1071bb275.json")
 if not firebase_admin._apps:
     cred = credentials.Certificate(cred_path)
     firebase_admin.initialize_app(cred)
